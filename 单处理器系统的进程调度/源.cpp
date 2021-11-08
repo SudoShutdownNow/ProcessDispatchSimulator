@@ -23,6 +23,8 @@ typedef struct PCB
 	}
 };
 
+int counter = 0;
+
 typedef struct runLog
 {
 	int PID;
@@ -96,9 +98,51 @@ vector<runLog> Prun()
 			ready.pop();
 			runLog log(nowProcess.PID, nowProcess.timeRequire);
 			myRunLog.push_back(log);
+			idle.push(nowProcess);
 		}
 	}
 	return myRunLog;
+}
+
+int explore()
+{
+	cout << "当前空闲PCB数量：" << idle.size() << endl;
+	cout << "===========================================" << endl;
+	cout << "当前等待的进程" << endl;
+	cout << "PID\t请求时间\t" << endl;
+	vector<PCB>::iterator iter;
+	for (iter = wait.begin(); iter != wait.end(); iter++)
+	{
+		cout << iter->PID << "\t" << iter->timeRequire << endl;
+	}
+	cout << "===========================================" << endl;
+	cout << "当前就绪的进程" << endl;
+	cout << "PID\t请求时间\t" << endl;
+	for (int i = 0; i < ready.size(); i++)
+	{
+		PCB process = ready.front();
+		cout << process.PID << "\t" << process.timeRequire << endl;
+		ready.pop();
+		ready.push(process);
+	}
+	cout << "===========================================" << endl << endl;
+	return OK;
+}
+
+int runResult(vector<runLog> log)
+{
+	cout << "进程运行日志: " << endl;
+	cout << "===========================================" << endl;
+	cout << "时间片序号\tPID\t执行时间" << endl;
+	vector<runLog>::iterator iter;
+	for (iter = log.begin(); iter != log.end(); iter++)
+	{
+		cout << iter - log.begin() + 1 << "\t\t" << iter->PID << "\t" << iter->runTime << endl;
+	}
+
+	cout << "===========================================" << endl << endl;
+
+	return OK;
 }
 
 int testmain()
@@ -106,13 +150,78 @@ int testmain()
 	init();
 	Pcreate(8, 5);
 	Pcreate(3, 3);
+	explore();
 	Pready(8);
 	Pready(3);
-	Prun();
+	explore();
+	vector<runLog> res = Prun();
+	runResult(res);
+	explore();
 	return OK;
+}
+
+int menu()
+{
+	cout << "===========================================" << endl;
+	cout << "进程调度模拟程序" << endl;
+	cout << "请选择要执行的操作：" << endl;
+	cout << "1. 创建一个进程" << endl;
+	cout << "2. 使进程进入就绪态" << endl;
+	cout << "3. 运行就绪的进程" << endl;
+	cout << "4. 显示所有进程状态" << endl;
+	cout << "===========================================" << endl << endl;
+	int option;
+	cin >> option;
+	return option;
 }
 
 int main()
 {
-	testmain();
+	init();
+	vector<runLog> rlog;
+	int PID;
+	while (1)
+	{
+		switch (menu())
+		{
+		case 1:
+			cout << "要创建的进程号: ";
+			cin >> PID;
+			cout << "进程申请的运行时间: ";
+			int timeRequire;
+			cin >> timeRequire;
+			if (Pcreate(PID, timeRequire) == FAILED)
+			{
+				cout << "进程创建失败！" << endl;
+			}
+			else
+			{
+				cout << "创建成功！" << endl;
+			}
+			break;
+		case 2:
+			cout << "要就绪的进程号: ";
+			cin >> PID;
+			if (Pready(PID) == FAILED)
+			{
+				cout << "进程就绪失败！" << endl;
+			}
+			else
+			{
+				cout << "进程已就绪" << endl;
+			}
+			break;
+		case 3:
+			rlog = Prun();
+			runResult(rlog);
+			break;
+		case 4:
+			explore();
+			break;
+		default:
+			cout << "输入有误" << endl;
+			break;
+		}
+	}
+
 }
